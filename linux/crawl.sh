@@ -6,7 +6,7 @@ GREY=$'\x1b[90m'
 RESET=$'\x1b[39m'
 
 [[ $# -lt 1 ]] && {
-	echo "$0 index_local_path [/usr/bin/find options]"
+	echo "$0 where/ [/usr/bin/find options]"
 	echo "example: $0 /mnt/share/ -type f -size -10M ! -iname '*.wav' ! -iname '*.mp3'"
 	exit
 }
@@ -49,14 +49,18 @@ function fork(){
 	tempdir="$1"
 	ln -s "$(realpath $0)" "$tempdir/$(basename $0)"
 	ln -s "$(realpath $index)" "$tempdir/$index"
-	( cd "$tempdir"; "./$(basename $0)" "${index%.*}"; )
+	( cd "$tempdir"; "./$(basename $0)" "${index%.*}" "${opts[@]}"; )
 }
 
 index=$(basename "$1").csv
 session_file=".$(basename "$1").sess"
 is_resume=$(session_create "$session_file")
 
-find "$@" -print |
+where="$1"
+shift
+opts=("$@")
+
+find "$where" "${opts[@]}" -type f -print |
 while read path
 do
 	[[ $is_resume = 1 && $(session_is_file_done $path) = 1 ]] && {
@@ -103,10 +107,15 @@ do
 			unzip -p "$path" | grep -a '<w:r' | sed 's/<w:p[^<\/]*>/ /g' | sed 's/<[^<]*>//g' | grep -a -v '^[[:space:]]*$' | sed G | escape >> "$index"
 			echo $GREEN " [docx]" $RESET
 			;;
-		application/vnd.ms-excel\;|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\;)
+		application/vnd.ms-excel\;)
 			echo -n "xls," >> "$index"
 			xls2csv -x "$path" | escape >> "$index"
 			echo $GREEN " [xls]" $RESET
+			;;
+		application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\;)
+			echo -n "xlsx," >> "$index"
+			unzip -p "$path" | grep -a -e '<si><t>' -e '<vt:lpstr>' | sed 's/<[^<\/]*>/ /g' | sed 's/<[^<]*>//g' | escape >> "$index"
+			echo $GREEN " [xlsx]" $RESET
 			;;
 		application/pdf\;)
 			echo -n "pdf," >> "$index"
