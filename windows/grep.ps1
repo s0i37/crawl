@@ -17,27 +17,6 @@ $opts = @{
   "Include" = $exts
 }
 
-#function highlight([String]$text){
-#  $COUNT = 10
-#  $words = $text.ToLower().split()
-#  do
-#  {
-#    $match = $words.IndexOf($needle.ToLower())
-#    if($match -ne -1)
-#    {
-#      for($i = $match-$COUNT + (($COUNT-$match + [Math]::Abs($COUNT-$match))/2); $i -lt $match+$COUNT - (($match+$COUNT-$words.Length + [Math]::Abs($match+$COUNT-$words.Length))/2); $i++)
-#      {
-#        if(echo $words[$i] | select-string $needle)
-#        {Write-Host -NoNewLine -ForegroundColor red "$($words[$i]) "}
-#        else
-#        {Write-Host -NoNewLine -ForegroundColor green "$($words[$i]) "}
-#      }
-#      $words = $words[$i .. $words.Length]
-#    }
-#    Write-Host ""
-#  }while($match -ne -1)
-#}
-
 Get-ChildItem @opts 2> $null | % {
   if((Get-Item $_.FullName) -isnot [System.IO.DirectoryInfo]) {
     $files += 1
