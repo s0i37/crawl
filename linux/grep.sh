@@ -7,7 +7,7 @@ RESET=$'\x1b[39m'
 
 [[ $# -lt 1 ]] && {
 	echo "$0 'needle' where/ [/usr/bin/find options]"
-	echo "example: $0 /mnt/share/ -type f -size -10M ! -iname '*.wav' ! -iname '*.mp3'"
+	echo "example: $0 's3cr3t' /mnt/share/ -size -10M ! -iname '*.wav' ! -iname '*.mp3'"
 	exit
 }
 
@@ -24,16 +24,16 @@ where="$1"
 shift
 opts=("$@")
 
-find "$where" "${opts[@]}" -type f -print |
+find "$where" "${opts[@]}" -type f -print 2> /dev/null |
 while read path
 do
-	printf "\n"
 	filename=$(basename "$path")
 	filename=${filename%\?*}
 	ext=${filename##*.}
 	[[ $filename = $ext ]] && ext=''
 	mime=$(file -bi "$path")
 	mime=${mime%' '*}
+	#echo "$path"
 	case $mime in
 		*/xml\;)
 			content=$(cat "$path")
@@ -92,15 +92,15 @@ do
 				echo "$content"|grep -ai "$needle" --color=auto
 			fi
 			;;
-		application/x-executable\;|application/x-ms-dos-executable\;)
-			content=$(/opt/radare2/bin/rabin2 -z "$path" 2> /dev/null)
+		application/x-executable\;|application/x*dos*)
+			content=$(rabin2 -z "$path" 2> /dev/null)
 			if echo "$content"|grep -q -ai "$needle"; then
 				echo $GREEN "[exe] $path" $RESET
 				echo "$content"|grep -ai "$needle" --color=auto
 			fi
 			;;
 		application/x-object\;|application/x-sharedlib|application/x-executable\;)
-			content=$(/opt/radare2/bin/rabin2 -z "$path" 2> /dev/null)
+			content=$(rabin2 -z "$path" 2> /dev/null)
 			if echo "$content"|grep -q -ai "$needle"; then
 				echo $GREEN "[elf] $path" $RESET
 				echo "$content"|grep -ai "$needle" --color=auto
@@ -158,7 +158,6 @@ do
 			fi
 			;;
 		*)
-			echo -n "unknown,"
 			file "$path" | grep -q text &&
 			{
 				content=$(cat "$path")

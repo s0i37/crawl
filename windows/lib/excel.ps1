@@ -1,6 +1,6 @@
 $filename = (Get-ChildItem $args[0]).FullName
 $excel = New-Object -ComObject Excel.Application
-#$excel.visible = False
+#$excel.visible = $true
 $xls = $excel.Workbooks.Open($filename, $false, $true)
 foreach($sheet in $xls.sheets)
 {
@@ -23,6 +23,12 @@ for($s = 1; $s -le $xls.Sheets.Count; $s++)
       }
     }
   }
+  $sheet = $null
 }
-$xls.Close()
+$xls.Close($false)
 $excel.Quit()
+[System.GC]::Collect()
+[System.GC]::WaitForPendingFinalizers()
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject($cell)
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject($xls)
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel)

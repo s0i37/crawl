@@ -7,7 +7,7 @@ RESET=$'\x1b[39m'
 
 [[ $# -lt 1 ]] && {
 	echo "$0 where/ [/usr/bin/find options]"
-	echo "example: $0 /mnt/share/ -type f -size -10M ! -iname '*.wav' ! -iname '*.mp3'"
+	echo "example: $0 /mnt/share/ -size -10M ! -iname '*.wav' ! -iname '*.mp3'"
 	exit
 }
 
@@ -24,15 +24,15 @@ function session_is_file_done(){
 function session_create(){
 	session_file="$1"
 	stat "$session_file" 1> /dev/null 2> /dev/null && echo 1 || {
-		touch "/dev/shm/$session_file"
-		ln -s "/dev/shm/$session_file" "$session_file"
+		touch "/tmp/$session_file"
+		ln -s "/tmp/$session_file" "$session_file"
 		echo 0
 	}
 }
 
 function session_close(){
 	rm "$session_file"
-	rm "/dev/shm/$session_file"
+	rm "/tmp/$session_file"
 }
 
 function escape(){
@@ -60,7 +60,7 @@ where="$1"
 shift
 opts=("$@")
 
-find "$where" "${opts[@]}" -type f -print |
+find "$where" "${opts[@]}" -type f -print 2> /dev/null |
 while read path
 do
 	[[ $is_resume = 1 && $(session_is_file_done $path) = 1 ]] && {
@@ -122,14 +122,14 @@ do
 			pdf2txt -t text "$path" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [pdf]" $RESET
 			;;
-		application/x-executable\;|application/x-ms-dos-executable\;)
+		application/x-executable\;|application/x*dos*)
 			echo -n "exe," >> "$index"
-			/opt/radare2/bin/rabin2 -z "$path" 2> /dev/null | escape >> "$index"
+			rabin2 -z "$path" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [exe]" $RESET
 			;;
 		application/x-object\;|application/x-sharedlib|application/x-executable\;)
 			echo -n "elf," >> "$index"
-			/opt/radare2/bin/rabin2 -z "$path" 2> /dev/null | escape >> "$index"
+			rabin2 -z "$path" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [elf]" $RESET
 			;;
 		application/*compressed*|application/*zip*|application/*rar*|application/*tar*|application/*gzip*)
