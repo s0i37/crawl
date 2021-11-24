@@ -10,7 +10,7 @@ IGNORE_EXT="gif,GIF,jpg,JPG,png,PNG,ico,ICO,svg,SVG,woff,ttf,eot"
 }
 
 function crawl(){
-	wget --no-check-certificate --recursive --spider -e robots=off -U $USERAGENT -O "/dev/shm/spider_temp" --no-verbose $* 2>&1 | sed -rn 's|.*URL:[ ]*([^ ]+).*|\1|p'
+	wget --no-check-certificate --recursive --spider -e robots=off -U $USERAGENT -O "/tmp/spider" --no-verbose $* 2>&1 | sed -rn 's|.*URL:[ ]*([^ ]+).*|\1|p'
 }
 
 function save(){
