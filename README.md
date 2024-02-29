@@ -2,6 +2,7 @@
 
 Each crawler goes through some source and pulls out exclusively useful data - text. Does not depend on extension. Easily customizable.
 Supported file types: `text`, `html`, `doc`/`docx`, `xls`/`xlsx`, `pdf`, `archives`, `exe`/`bin`, `eml`/`msg`, `images`, `sounds`.
+
 You can easily add your own file types (GNU power)
 
 ![crawl.sh](img/crawl.png)
@@ -124,4 +125,4 @@ cd www && node index.js
 chrome http://localhost:8080/test/
 ```
 
-Continuous crawling (your Google in local area) - just use a few easy cron scripts cron/README.md
+Continuous crawling (your Google in local area) - just use a few easy cron scripts [cron/README.md](cron/README.md)
