@@ -1,0 +1,19 @@
+{
+  "name": "www",
+  "version": "1.0.0",
+  "description": "elasticsearch web-interface",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "s0i37",
+  "license": "ISC",
+  "dependencies": {
+    "@opensearch-project/opensearch": "^2.5.0",
+    "ejs": "^2.5.2",
+    "elasticsearch": "^11.0.1",
+    "JSON": "^1.0.0",
+    "serve-static": "^1.11.1"
+  }
+}

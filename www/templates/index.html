@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <link href="/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+  <script src="/jquery/dist/jquery.min.js"></script>
+  <script src="/jquery-ui/jquery-ui.min.js"></script>
+  <script>
+  $(document).ready( function() {
+    $("#query").autocomplete( {
+      source: function(request, response) {
+        $.ajax( {
+          url: "auto",
+          data: {q: request.term},
+          success: function(data) { response(data) }
+        } )
+      },
+      minLength: 2
+    } ) 
+  } )
+  </script>
+</head>
+<body>
+
+<div class="container-fluid">
+  <div class="row row-eq-height" style="margin-top:15%">
+    <form method="GET" action="search">
+     <div class="col-md-8 col-md-offset-2">
+      <div class="input-group">
+        <input id="query" type="text" name="q" class="form-control" value="">
+        <span class="input-group-btn">
+         <button class="btn btn-primary" type="button">искать</button>
+        </span>
+       </div>
+     </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
