@@ -9,6 +9,10 @@ You can easily add your own file types (GNU power)
 
 ![search.sh](img/search.png)
 
+![www](img/www.png)
+
+![www](img/www2.png)
+
 ## Installation
 
 ### System
