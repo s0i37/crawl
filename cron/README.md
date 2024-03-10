@@ -1,6 +1,14 @@
 ## Continuous crawling
 
 ```
+sudo apt install ldap-utils bind9-host nmap netcat-openbsd
+echo 'deb https://http.kali.org/kali kali-rolling main non-free contrib' >> /etc/apt/sources.list
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED444FF07D8D0BF6
+apt update
+apt install crackmapexec
+```
+
+```
 JAVA_LIBRARY_PATH=/opt/opensearch/plugins/opensearch-knn/lib /opt/opensearch/bin/opensearch
 cd /opt/crawl/www && node index.js
 ```
