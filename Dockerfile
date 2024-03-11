@@ -24,7 +24,7 @@ RUN apt install -y --no-install-recommends nodejs npm openjdk-17-jre && \
 pip3 install opensearch-py colorama && \
 cd www/ && npm install && npm install -g bower && bower install && mv bower_components static && cd - && \
 wget https://artifacts.opensearch.org/releases/bundle/opensearch/2.11.0/opensearch-2.11.0-linux-x64.tar.gz -O /tmp/opensearch.tar.gz && tar xvf /tmp/opensearch.tar.gz -C /opt/ && rm /tmp/opensearch.tar.gz && \
-echo 'deb https://http.kali.org/kali kali-rolling main non-free contrib' >> /etc/apt/sources.list && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED444FF07D8D0BF6 && apt update && apt -y --no-install-recommends install crackmapexec
+echo 'deb https://http.kali.org/kali kali-rolling main non-free contrib' >> /etc/apt/sources.list && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED444FF07D8D0BF6 && apt update && apt -y --no-install-recommends install crackmapexec && crackmapexec
 
 RUN useradd -s /bin/bash -g users -N -M -d /opt/crawl user && \
 chown -R user.users /opt/ /mnt/ && \
@@ -33,7 +33,6 @@ chmod +w /etc/sudoers && echo 'user    ALL=(root) NOPASSWD: ALL' >> /etc/sudoers
 RUN echo 'LANG="ru_RU.UTF-8"' > /etc/default/locale && \
 localedef -i ru_RU -f UTF-8 ru_RU.UTF-8 && \
 locale-gen && \
-echo 241 | dpkg-reconfigure locales && \
-echo "LANG=ru_RU.UTF-8" > /etc/default/locale
+echo 241 | dpkg-reconfigure locales
 
 EXPOSE 8080
