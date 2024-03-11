@@ -4,13 +4,13 @@ DOMAIN='company.org'
 USER='iivanov'
 PASS='password'
 
-#crackmapexec -t 1 smb --shares smb-hosts.txt | grep ' READ ' | sed -rn 's/SMB\s+([0-9\.]+)\s+445\s+([^" "]+)\s+([^" "]+)\s+READ.*/\1\t\2\t\3/p' > shares-anon.txt
-crackmapexec -t 1 smb -d "$DOMAIN" -u "$USER" -p "$PASS" --shares smb-hosts.txt | grep ' READ ' | sed -rn 's/SMB\s+([0-9\.]+)\s+445\s+([^" "]+)\s+([^" "]+)\s+READ.*/\1\t\2\t\3/p' > shares-user.txt
+#crackmapexec -t 1 smb --shares smb-hosts.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | grep ' READ ' | sed -rn 's/SMB\s+([0-9\.]+)\s+445\s+([^" "]+)\s+([^" "]+)\s+READ.*/\1\t\2\t\3/p' > shares-anon.txt
+crackmapexec -t 1 smb -d "$DOMAIN" -u "$USER" -p "$PASS" --shares smb-hosts.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | grep ' READ ' | sed -rn 's/SMB\s+([0-9\.]+)\s+445\s+([^" "]+)\s+([^" "]+)\s+READ.*/\1\t\2\t\3/p' > shares-user.txt
 
 IFS=$'\t'
 for depth in {1..10}
 do
-	cat shares-user.txt | grep -v 'IPC$' | while read ip name share
+	cat shares-user.txt | fgrep -v 'IPC$' | while read ip name share
 	do echo "$ip" "$share"
 		fgrep -q "+ $depth //$ip/$share" crawl.log 2> /dev/null && continue
 		mkdir "/mnt/$ip-$share"

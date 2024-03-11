@@ -1,0 +1,23 @@
+{
+  "name": "www",
+  "description": "elasticsearch web-interface",
+  "main": "index.js",
+  "authors": [
+    "s0i37"
+  ],
+  "license": "ISC",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery-ui": "^1.12.1",
+    "bootstrap": "^5.3.3",
+    "jquery": "^3.7.1"
+  }
+}
