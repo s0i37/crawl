@@ -3,7 +3,7 @@
 GREEN=$'\x1b[32m'
 RESET=$'\x1b[39m'
 
-MATCH=50
+MATCH=30
 LIMIT=10
 OFFSET=0
 URI='%'
@@ -19,7 +19,7 @@ esac
 done
 
 [[ $(($#-$OPTIND)) -lt 1 ]] && [[ $URI = '%' ]] && {
-	echo $0 [opts] words.db QUERY
+	echo "$0 [opts] words.db QUERY"
 	echo "opts:"
 	echo "  -m match"
 	echo "  -c count"

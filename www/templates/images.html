@@ -45,14 +45,14 @@
      <div class="col-md-10 col-md-offset-1">
        <div class="input-group">
         <input id="query" type="text" name="q" class="form-control" value="<%= query %>">
-        <input type="hidden" name="images" value=0>
+        <input type="hidden" name="images" value=1>
         <span class="input-group-btn">
          <button class="btn btn-primary" type="button" onclick="document.form.submit()">искать</button>
         </span>
        </div>
        <ul class="nav nav-tabs">
-        <li class="active"><a data-toggle="tab" href="#" onclick="document.form.images.value=0;document.form.submit()">Все</a></li>
-        <li><a data-toggle="tab" href="#" onclick="document.form.images.value=1;document.form.submit()">Картинки</a></li>
+        <li><a data-toggle="tab" href="#" onclick="document.form.images.value=0;document.form.submit()">Все</a></li>
+        <li class="active"><a data-toggle="tab" href="#" onclick="document.form.images.value=1;document.form.submit()">Картинки</a></li>
        </ul>
        <div class="tab-content">
         <div id="text" class="tab-pane fade in active"></div>
@@ -66,28 +66,28 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-md-10 col-md-offset-1">
-      <p class="text-muted">Результатов: <%= pages.length + (offset-1)*10 %>/<%= found %></p>
+      <p class="text-muted">Результатов: <%= pages.length + (offset-1)*40 %>/<%= found %></p>
     </div>
   </div>
 </div>
 
 <div class="container-fluid">
-  <% pages.forEach( function(page) { %>
-    <div class="row">
-      <div class="col-md-10 col-md-offset-1">
-        <div class="panel panel-default">
-          <div class="panel-body">
-            <h4 class="text-primary"><a target="_blank" href="<%=page.href%>"><%- page.title %></a>
-              <span class="text-muted">(<%= page.relevant %>)</span>
-            </h4>
-            <span class="text-success pointer" onclick="new_tab('<%=page.cache%>')"><%- page.url %></span>
-            <span class="text-muted"><%= new Date(page.timestamp).toLocaleDateString() %></span>
-            <p><%- page.matches %></p>
-          </div>
-        </div>
-      </div>
+ <div class="row">
+  <div class="container col-md-10 col-md-offset-1">
+   <% pages.forEach( function(page) { 
+    if (page.filetype == "image") { %>
+    <div class="col-lg-3">
+    <figure class="figure">
+      <img src="/images/<%=page.url.replace(/<\/?b>/g,'').replace(/\//g,'-')%>" class="figure-img img-thumbnail rounded" alt="<%=page.title%>">
+      <figcaption class="figure-caption"><a target="_blank" href="<%=page.href%>"><%- page.title %></a></figcaption>
+      <figcaption class="figure-caption"><span class="text-success pointer" onclick="new_tab('<%=page.cache%>')"><%- page.url %></span></figcaption>
+      <figcaption class="figure-caption"><%- page.matches.slice(0,200) %></figcaption>
+    </figure>
     </div>
-  <% } ) %>
+   <% }
+   } ) %>
+  </div>
+ </div>
 </div>
 
 <footer>

@@ -1,23 +1,49 @@
 #!/bin/bash
 
 DOMAIN='company.org'
-USER='iivanov'
+USER='username'
 PASS='password'
 
-#crackmapexec -t 1 smb --shares smb-hosts.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | grep ' READ ' | sed -rn 's/SMB\s+([0-9\.]+)\s+445\s+([^" "]+)\s+([^" "]+)\s+READ.*/\1\t\2\t\3/p' > shares-anon.txt
-crackmapexec -t 1 smb -d "$DOMAIN" -u "$USER" -p "$PASS" --shares smb-hosts.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" | grep ' READ ' | sed -rn 's/SMB\s+([0-9\.]+)\s+445\s+([^" "]+)\s+([^" "]+)\s+READ.*/\1\t\2\t\3/p' > shares-user.txt
+ROBOT='1'
+CLUSTER='1'
 
-IFS=$'\t'
+cat smb-hosts.txt | awk "(NR-$ROBOT)%$CLUSTER==0" | while read ip
+do
+	smbclient -U "$DOMAIN"/"$USER"%"$PASS" -L "$ip" | grep 'Disk' | sed -rn 's/^\s+(.+)\s+Disk.*/\1/p' | fgrep -v -e 'IPC$' -e 'print$' | while read share
+	do
+		smbclient -U "$DOMAIN"/"$USER"%"$PASS" "//$ip/$share" -c 'q' >/dev/null 2>&1 && echo "$ip"$'\t'"$share"
+	done
+done > smb-shares.txt
+
+mkdir smb-all 2> /dev/null; cd smb-all
 for depth in {1..10}
 do
-	cat shares-user.txt | fgrep -v 'IPC$' | while read ip name share
-	do echo "$ip" "$share"
-		fgrep -q "+ $depth //$ip/$share" crawl.log 2> /dev/null && continue
-		mkdir "/mnt/$ip-$share"
-		sudo timeout 5 mount.cifs "//$ip/$share" "/mnt/$ip-$share" -o ro,dom="$DOMAIN",user="$USER",pass="$PASS" || { echo "- $depth //$ip/$share" >> crawl.log; continue; }
-		timeout 300 /opt/crawl/crawl.sh "/mnt/$ip-$share" -mindepth "$depth" -maxdepth "$depth" -size -100k
-		sudo umount "/mnt/$ip-$share"
-		rm -r "/mnt/$ip-$share"
-		echo "+ $DEPTH //$ip/$share" >> crawl.log
+	IFS=$'\t'
+	cat ../smb-shares.txt | while read ip share
+	do echo "$ip: $share"
+		grep -e " $ip$" ../hosts-ip.txt > /dev/null && host=$(grep -e " $ip$" ../hosts-ip.txt | awk '{print $1}') || host="$ip"
+		mkdir -p "smb/$host/$share" 2> /dev/null
+		sudo timeout 5 mount.cifs "//$host/$share" "smb/$host/$share" -o ro,dom="$DOMAIN",user="$USER",pass="$PASS",vers=2.0 || sudo timeout 5 mount.cifs "//$host/$share" "smb/$host/$share" -o ro,dom="$DOMAIN",user="$USER",pass="$PASS",vers=1.0
+		timeout 300 /opt/crawl/crawl.sh "smb/$host/$share" -mindepth "$depth" -maxdepth "$depth" -size -100k -not -ipath '*/Program Files*/*' -not -ipath '*/Windows/*' | /opt/crawl/save_images.sh /opt/crawl/www/static/images
+		sudo umount "smb/$host/$share"
+		timeout 1 rm -r "smb/$host"
 	done
 done
+cd -
+
+mkdir smb-new 2> /dev/null; cd smb-new
+for depth in {1..10}
+do
+	IFS=$'\t'
+	cat ../smb-shares.txt | while read ip share
+	do echo "$ip: $share"
+		grep -e " $ip$" ../hosts-ip.txt > /dev/null && host=$(grep -e " $ip$" ../hosts-ip.txt | awk '{print $1}') || host="$ip"
+		mkdir -p "smb/$host/$share" 2> /dev/null
+		sudo timeout 5 mount.cifs "//$host/$share" "smb/$host/$share" -o ro,dom="$DOMAIN",user="$USER",pass="$PASS",vers=2.0 || sudo timeout 5 mount.cifs "//$host/$share" "smb/$host/$share" -o ro,dom="$DOMAIN",user="$USER",pass="$PASS",vers=1.0
+		timeout 300 /opt/crawl/crawl.sh "smb/$host/$share" -newermt "$(date +'%Y-%m-%d 00:00:00' -d '-24 hours')" -mindepth "$depth" -maxdepth "$depth" -size -100k -not -ipath '*/Program Files*/*' -not -ipath '*/Windows/*' | /opt/crawl/save_images.sh /opt/crawl/www/static/images
+		sudo umount "smb/$host/$share"
+		timeout 1 rm -r "smb/$host"
+		rm ".smb_${host}_${share}.sess"
+	done
+done
+cd -

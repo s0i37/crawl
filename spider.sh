@@ -1,7 +1,7 @@
 #!/bin/bash
 
 USERAGENT="Mozilla"
-IGNORE_EXT="gif,GIF,jpg,JPG,png,PNG,ico,ICO,svg,SVG,woff,ttf,eot"
+IGNORE_EXT="woff,ttf,eot"
 
 [ $# -lt 1 ] && {
 	echo "$0 url [/usr/bin/wget options]"
@@ -11,11 +11,11 @@ IGNORE_EXT="gif,GIF,jpg,JPG,png,PNG,ico,ICO,svg,SVG,woff,ttf,eot"
 }
 
 function crawl(){
-	$(dirname "$0")/bin/wget --no-check-certificate --recursive --spider -e robots=off -U $USERAGENT -O "/tmp/spider" --no-verbose $* 2>&1 | sed -rn 's|.*URL:[ ]*([^ ]+).*|\1|p'
+	$(dirname "$0")/bin/wget --no-check-certificate --recursive --spider -e robots=off -U "$USERAGENT" -O "/tmp/spider" --no-verbose $* 2>&1 | sed -rn 's|.*URL:[ ]*([^ ]+).*|\1|p'
 }
 
 function save(){
-	$(dirname "$0")/bin/wget --no-check-certificate --recursive -N -e robots=off -U $USERAGENT --no-verbose -R "$IGNORE_EXT" $* 2>&1 | sed -rn 's|.*URL:[ ]*([^ ]+).*|\1|p'
+	$(dirname "$0")/bin/wget --no-check-certificate --recursive -nc -e robots=off -U "$USERAGENT" --no-verbose -R "$IGNORE_EXT" $* 2>&1 | sed -rn 's|.*URL:[ ]*([^ ]+).*|\1|p'
 }
 
 #crawl $*

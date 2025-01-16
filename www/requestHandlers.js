@@ -85,18 +85,21 @@ function search(response, request)
     var query = querystring.parse( url.parse( request.url ).query ).q
     var offset = parseInt( querystring.parse( url.parse( request.url ).query ).o ) || 1
     var index = url.parse( request.url ).pathname.split('/').slice(-2,-1)[0] || "default"
+    var is_json = querystring.parse( url.parse( request.url ).query ).json != undefined
+    var is_images = querystring.parse( url.parse( request.url ).query ).images == 1
+    var count = (!is_images) ? 10 : 40
     get_opensearch().search( {
         index: index,
         body: {
-            from: offset * 10 - 10,
-            size: 10,
+            from: offset * count - count,
+            size: count,
             query: {
                 query_string: {
                     query: query,
                     fields: ["inurl^100","intitle^50","intext^5"],
                     default_operator: "AND",
                     fuzziness: "AUTO",
-                    //analyzer: "russian"
+                    analyzer: "default"
                 }
             },
             highlight: {
@@ -123,7 +126,8 @@ function search(response, request)
             var timestamp = res.body.hits.hits[i]._source.timestamp
             var title = res.body.hits.hits[i]._source.inurl.split('/').slice(-1)[0] //res.body.hits.hits[i]._source.intitle
             var url = res.body.hits.hits[i]._source.inurl
-            var href = url.indexOf('/mnt/') == 0 ? 'smb://' + url.split('/')[2].split('-').slice(0,-1).join('-') + '/' + url.split('/')[2].split('-').slice(-1)[0] + '/' + url.split('/').slice(3).join('/') : "http://" + url
+            var filetype = res.body.hits.hits[i]._source.filetype
+            var href = url.split('/')[0] + '://' + url.split('/').slice(1).join('/')
             var matches = []
             for( item in res.body.hits.hits[i].highlight )
             {
@@ -139,21 +143,41 @@ function search(response, request)
                 title: title.replace(/_b_/g, '<b>').replace(/_\/b_/g, '</b>'),
                 href: href,
                 url: url.replace(/_b_/g, '<b>').replace(/_\/b_/g, '</b>'),
+                filetype: filetype,
                 relevant: relevant,
                 timestamp: timestamp,
                 matches: matches.join(" ... ").replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/_b_/g, '<b>').replace(/_\/b_/g, '</b>')
             } )
         }
-        fs.readFile( "templates/search.html", "utf8", function(e,data) {
-            var html = ejs.render(data, {
-                found: found,
-                query: query,
-                pages: pages,
-                offset: offset
-            })
-            response.writeHead(200, {"Content-Type": "text/html; charset=utf-8"})
-            response.end(html)
-        } )
+        if(is_json)
+        {
+            response.writeHead(200, {"Content-Type": "application/json; charset=utf-8"})
+            response.end(JSON.stringify(pages))
+        }
+        else if(is_images)
+        {
+            fs.readFile( "templates/images.html", "utf8", function(e,data) {
+                var html = ejs.render(data, {
+                    found: found,
+                    query: query.includes("filetype:image") ? query : query + " filetype:image",
+                    pages: pages,
+                    offset: offset
+                })
+                response.writeHead(200, {"Content-Type": "text/html; charset=utf-8"})
+                response.end(html)
+            } )
+        }
+        else
+            fs.readFile( "templates/search.html", "utf8", function(e,data) {
+                var html = ejs.render(data, {
+                    found: found,
+                    query: query,
+                    pages: pages,
+                    offset: offset
+                })
+                response.writeHead(200, {"Content-Type": "text/html; charset=utf-8"})
+                response.end(html)
+            } )
     } )
 }
 

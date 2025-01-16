@@ -33,7 +33,7 @@ Depends:
 
 ```
 sudo apt install sqlite3 cifs-utils
-sudo apt install file uchardet cifs-utils lynx catdoc unzip python3-pdfminer radare2 p7zip-full
+sudo apt install file xdg-utils uchardet cifs-utils lynx catdoc unzip python3-pdfminer radare2 p7zip-full
 sudo apt install maildir-utils mpack libemail-outlook-message-perl libemail-sender-perl binwalk
 sudo apt install graphicsmagick-imagemagick-compat tesseract-ocr tesseract-ocr-eng tesseract-ocr-rus ffmpeg
 sudo pip3 install vosk
@@ -43,7 +43,7 @@ sudo pip3 install vosk
 
 ```
 sudo docker build -t crawl .
-sudo docker run --privileged --cap-add SYS_ADMIN --cap-add DAC_READ_SEARCH --cap-add NET_BIND_SERVICE --cap-add CAP_SYSLOG -u 1000 -p 8080:8080 --name crawl -it crawl /bin/bash
+sudo docker run --cap-add SYS_ADMIN --cap-add DAC_READ_SEARCH --cap-add NET_BIND_SERVICE --cap-add CAP_SYSLOG -u 1000 -p 8080:8080 --name crawl -it crawl
 ```
 
 ### SMB crawling
@@ -115,6 +115,7 @@ Depends:
 ```
 sudo apt install nodejs npm openjdk-17-jre
 cd www && npm install
+sudo npm install -g bower && bower install && mv bower_components static
 wget wget https://artifacts.opensearch.org/releases/bundle/opensearch/2.11.0/opensearch-2.11.0-linux-x64.tar.gz -O /tmp/opensearch.tar.gz && tar xvf /tmp/opensearch.tar.gz -C /opt/
 JAVA_LIBRARY_PATH=/opt/opensearch/plugins/opensearch-knn/lib /opt/opensearch/opensearch-tar-install.sh
 ```
@@ -129,4 +130,4 @@ cd www && node index.js
 chrome http://localhost:8080/test/
 ```
 
-Continuous crawling (your Google in local area) - just use a few easy cron scripts [cron/README.md](cron/README.md)
+Continuous crawling (your Google in local network) - just use a few easy cron scripts [cron/README.md](cron/README.md)

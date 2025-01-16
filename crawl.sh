@@ -7,34 +7,32 @@ RESET=$'\x1b[39m'
 
 [[ $# -lt 1 ]] && {
 	echo "$0 where/ [/usr/bin/find options]"
-	echo "example: $0 /mnt/share/ -size -10M -not -iname '*.wav' -not -iname '*.mp3'"
-	echo "example: $0 /mnt/share/ -not -ipath '*/Program Files*/*' -not -ipath '*/Windows/*'"
-	echo "example: $0 /mnt/share/ -newermt '2012-12-21 00:00'"
+	echo "example: $0 folder/ -size -10M -not -iname '*.wav' -not -iname '*.mp3'"
+	echo "example: $0 smb/10.10.10.10/pub/ -not -ipath '*/Program Files*/*' -not -ipath '*/Windows/*'"
+	echo "example: $0 http/10.10.10.10/ -newermt '2012-12-21 00:00'"
 	exit
 }
 
 function session_file_done(){
 	path="$1"
-	echo "$path" >> "$session_file"
+	echo "[$path]" >> "$session_file"
 }
 
 function session_is_file_done(){
 	path="$1"
-	grep "$path" "$session_file" 1> /dev/null 2> /dev/null && echo 1 || echo 0
+	fgrep "[$path]" "$session_file" 1> /dev/null 2> /dev/null && echo 1 || echo 0
 }
 
 function session_create(){
 	session_file="$1"
 	stat "$session_file" 1> /dev/null 2> /dev/null && echo 1 || {
-		touch "/tmp/$session_file"
-		ln -s "/tmp/$session_file" "$session_file"
+		touch "$session_file"
 		echo 0
 	}
 }
 
 function session_close(){
 	rm "$session_file"
-	rm "/tmp/$session_file"
 }
 
 function escape(){
@@ -51,21 +49,26 @@ function fork(){
 	tempdir="$1"
 	ln -s "$(realpath $0)" "$tempdir/$(basename $0)"
 	ln -s "$(realpath $index)" "$tempdir/$index"
-	( cd "$tempdir"; "./$(basename $0)" "${index%.*}" "${opts[@]}"; )
+	( cd "$tempdir"; "./$(basename $0)" "$where" "${opts[@]}"; )
 }
 
-index=$(basename "$1").csv
-session_file=".$(basename "$1").sess"
-is_resume=$(session_create "$session_file")
-
-where="$1"
+where="${1//../}"
 shift
 opts=("$@")
+
+if [[ ${where:0:1} = '.' || ${where:0:1} = '/' ]]; then
+	echo "only relative direct path: $0 path/to/folder"
+	exit
+fi
+
+index=${where//\//_}.csv
+session_file=".${where//\//_}.sess"
+is_resume=$(session_create "$session_file")
 
 find "$where" "${opts[@]}" -type f -print 2> /dev/null |
 while read path
 do
-	[[ $is_resume = 1 && $(session_is_file_done $path) = 1 ]] && {
+	[[ $is_resume = 1 && $(session_is_file_done "$path") = 1 ]] && {
 		echo $GREY"$path"$RESET
 		continue
 	}
@@ -77,21 +80,22 @@ do
 	filename=$(basename "$path")
 	filename=${filename%\?*}
 	ext=${filename##*.}
-	[[ $filename = $ext ]] && ext=''
+	[[ "$filename" = "$ext" ]] && ext=''
 	echo -n "$ext" | escape >> "$index"
 	echo -n "," >> "$index"
 	mime=$(file -b --mime-type "$path")
-	case $mime in
+	#mime=$(xdg-mime query filetype "$path")
+	case "$mime" in
 		*/*html*|application/javascript)
 			echo -n "html," >> "$index"
 			codepage=$(uchardet "$path")
-			cat "$path" | iconv -f $codepage | lynx -nolist -dump -stdin | escape >> "$index"
+			cat "$path" | iconv -f "$codepage" 2> /dev/null | lynx -nolist -dump -stdin | escape >> "$index"
 			echo $GREEN " [html]" $RESET
 			;;
 		text/*|*/*script|*/xml|*/json|*-ini)
 			echo -n "text," >> "$index"
 			codepage=$(uchardet "$path")
-			cat "$path" | iconv -f $codepage | escape >> "$index"
+			cat "$path" | iconv -f "$codepage" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [text]" $RESET
 			;;
 		application/msword)
@@ -105,11 +109,10 @@ do
 			echo $GREEN " [docx]" $RESET
 			if unzip -l "$path" | grep -q 'word/media/'; then
 				temp=$(tempfile 2>/dev/null)
-				rm $temp && mkdir -p "$temp/$path"
+				rm "$temp" && mkdir -p "$temp/$path"
 				unzip "$path" 'word/media/*' -d "$temp/$path" > /dev/null
 				fork "$temp"
 				rm -r "$temp"
-				#session_file_done $path
 			fi
 			;;
 		application/vnd.ms-excel)
@@ -118,7 +121,7 @@ do
 			echo $GREEN " [xls]" $RESET
 			;;
 		application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
-			echo -n "xlsx," >> "$index"
+			echo -n "xls," >> "$index"
 			#libreoffice --convert-to csv "$path" out.csv
 			unzip -p "$path" 2> /dev/null | grep -a -e '<si><t' -e '<vt:lpstr>' | sed 's/<[^<\/]*>/ /g' | sed 's/<[^<]*>//g' | escape >> "$index"
 			echo $GREEN " [xlsx]" $RESET
@@ -129,43 +132,42 @@ do
 			echo $GREEN " [pdf]" $RESET
 			;;
 		application/x-executable|application/*microsoft*-executable|application/x*dos*)
-			echo -n "exe," >> "$index"
-			rabin2 -z "$path" 2> /dev/null | escape >> "$index"
+			echo -n "executable," >> "$index"
+			rabin2 -qq -z "$path" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [exe]" $RESET
 			;;
 		application/x-object|application/x-sharedlib|application/x-executable)
-			echo -n "elf," >> "$index"
-			rabin2 -z "$path" 2> /dev/null | escape >> "$index"
+			echo -n "executable," >> "$index"
+			rabin2 -qq -z "$path" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [elf]" $RESET
-			;;
-		application/*compressed*|application/*zip*|application/*rar*|application/*tar*|application/*gzip*|application/*-msi|*/java-archive)
-			echo -n "zip," >> "$index"
-			7z l -p '' "$path" 2> /dev/null | tail -n +13 | escape >> "$index"
-			echo $GREEN " [archive]" $RESET
-			temp=$(tempfile 2>/dev/null)
-			rm $temp && mkdir -p "$temp/$path"
-			7z x -p '' "$path" -o"$temp/$path" 1> /dev/null 2> /dev/null
-			fork "$temp"
-			rm -r "$temp"
-			#session_file_done $path
 			;;
 		image/*)
 			echo -n "image," >> "$index"
 			#identify -verbose "$path" 2> /dev/null | escape >> "$index"
 			tesseract "$path" stdout -l eng 2> /dev/null | escape >> "$index"
 			tesseract "$path" stdout -l rus 2> /dev/null | escape >> "$index"
-			#curl -X POST --form "photo=@$path" http://10.250.153.11/ | escape >> "$index"
-			echo $GREEN " [img]" $RESET
+			#curl -s http://10.250.153.11/string_api -F "file=@$path" | escape >> "$index"
+			echo $GREEN " [image]" $RESET
 			;;
 		audio/*)
 			echo -n "audio," >> "$index"
 			vosk-transcriber --lang en-us --input "$path" 2> /dev/null | escape >> "$index"
-			echo $GREEN " [snd]" $RESET
+			echo $GREEN " [audio]" $RESET
+			;;
+		application/*compressed*|application/*zip*|application/*rar*|application/*tar*|application/*gzip*|application/*-msi|*/java-archive)
+			echo -n "archive," >> "$index"
+			7z l -p '' "$path" 2> /dev/null | tail -n +13 | escape >> "$index"
+			echo $GREEN " [archive]" $RESET
+			temp=$(tempfile 2>/dev/null)
+			rm "$temp" && mkdir -p "$temp/$path"
+			7z x -p '' "$path" -o"$temp/$path" 1> /dev/null 2> /dev/null
+			fork "$temp"
+			rm -r "$temp"
 			;;
 		application/vnd.ms-outlook)
 			echo -n "message," >> "$index"
 			temp=$(tempfile 2>/dev/null)
-			rm $temp && mkdir -p "$temp/$path"
+			rm "$temp" && mkdir -p "$temp/$path"
 			msgconvert --outfile "$temp/$path/out.eml" "$path" 2> /dev/null
 			mu view "$temp/$path/out.eml" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [message]" $RESET
@@ -173,20 +175,18 @@ do
 			rm "$temp/$path/out.eml"
 			fork "$temp"
 			rm -r "$temp"
-			#session_file_done $path
 			;;
 		message/*)
 			echo -n "message," >> "$index"
 			mu view "$path" 2> /dev/null | escape >> "$index"
 			echo $GREEN " [message]" $RESET
 			temp=$(tempfile 2>/dev/null)
-			rm $temp && mkdir -p "$temp/$path"
+			rm "$temp" && mkdir -p "$temp/$path"
 			cp "$path" "$temp/$path/"
 			munpack -t -f -C "$(realpath $temp/$path)" "$(basename $path)" > /dev/null
 			rm "$temp/$path/$(basename $path)"
 			fork "$temp"
 			rm -r "$temp"
-			#session_file_done $path
 			;;
 		*.tcpdump.pcap)
 			echo -n "pcap," >> "$index"
@@ -219,7 +219,7 @@ do
 			}
 			;;
 	esac
-	session_file_done $path
+	session_file_done "$path"
 done
 
-session_close
+#session_close

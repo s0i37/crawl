@@ -17,6 +17,7 @@ parser.add_argument("-o", "--offset", type=int, metavar="offset", default=0, hel
 parser.add_argument("-c", "--count", type=int, metavar="count", default=10, help="count results in query")
 parser.add_argument("-init", action="store_true", help="init index")
 parser.add_argument("-drop", action="store_true", help="drop index")
+parser.add_argument("-copy", dest="copy_index", metavar="new_index_name", help="copy index")
 parser.add_argument("-import", dest="file_import", metavar="input.csv", help="import data")
 parser.add_argument("-delete", dest="file_delete", metavar="input.csv", help="delete data")
 parser.add_argument("-query", metavar="query", help="search query")
@@ -40,13 +41,12 @@ def indexes():
 
 def info(index):
   print(json.dumps(client.indices.get_settings(index=index), indent=4))
-  #json.dumps(client.indices.get_mapping(index=index))
 
 def init(index):
   SETTINGS = {
     "mappings": {
       "properties": {
-        "timestamp": {"type": "text"},
+        "timestamp": { "type": "text" },
         "inurl": { "type" : "text" },
         "site": { "type" : "text" },
         "ext": { "type" : "text" },
@@ -58,21 +58,29 @@ def init(index):
     "settings": {
       "analysis": {
         "analyzer": {
-          "russian": {
+          "default": {
             "type": "custom",
             "tokenizer": "standard",
-            "filter": ["lowercase", "russian_stop"],
+            "filter": ["lowercase", "russian_stop", "russian_keywords", "russian_stemmer"],
           },
           "autocomplete": {
             "type": "custom",
             "tokenizer": "standard",
-            "filter": ["lowercase", "russian_stop", "autocomplete_filter"]
+            "filter": ["lowercase", "russian_stop", "russian_keywords", "russian_stemmer", "autocomplete_filter"]
           }
         },
         "filter": {
           "russian_stop": {
             "type": "stop",
             "stopwords": "_russian_"
+          },
+          "russian_keywords": {
+            "type": "keyword_marker",
+            "keywords": []
+          },
+          "russian_stemmer": {
+            "type": "stemmer",
+            "language": "russian"
           },
           "autocomplete_filter": {
             "type": "edge_ngram",
@@ -110,7 +118,7 @@ def add(index, source):
           body = document,
           refresh = True
       )
-      #print(response)
+      print(response)
     except Exception as e:
       print(str(e))
 
@@ -124,7 +132,7 @@ def query(index, text):
         "fields": ["inurl^100","intitle^50","intext^5"],
         "default_operator": "AND",
         "fuzziness": "AUTO",
-        "analyzer": "russian"
+        "analyzer": "default"
       }
     },
     "highlight": {
@@ -175,10 +183,21 @@ def drop(index):
   )
   print(response)
 
+def copy(index_src, index_dst):
+  response = client.reindex(
+    body = {
+      "source":{"index": index_src},
+      "dest":{"index": index_dst}
+    }
+  )
+  print(response)
+
 if args.init:
   init(index=args.index)
 elif args.drop:
   drop(index=args.index)
+elif args.copy_index:
+  copy(index_src=args.index, index_dst=args.copy_index)
 elif args.file_import:
   add(index=args.index, source=args.file_import)
 elif args.file_delete:
