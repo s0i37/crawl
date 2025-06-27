@@ -197,7 +197,7 @@ Create index:
 `/opt/crawl/opensearch.py localhost:9200 -i company -init`
 
 Specify DOMAIN, USER, PASS, and DC in `cron/targets.sh`, `cron/smb.sh` and optionally `cron/www.sh`. Specify INDEX=company in `cron/import.sh`. Tune nmap scan speed in `cron/scan.sh`.
-Specify ROBOT and CLUSTER in `cron/www.sh`, `cron/ftp.sh`, `cron/smb.sh`, `cron/nfs.sh`, `cron/rsync.sh`. Also you can tune CRAWL_TIME, MAX_FILESIZE and MAX_DEPTH in these scripts.
+For distributed crawling specify ROBOT and CLUSTER in `cron/www.sh`, `cron/ftp.sh`, `cron/smb.sh`, `cron/nfs.sh`, `cron/rsync.sh`. Also you can tune CRAWL_TIME, MAX_FILESIZE and MAX_DEPTH in these scripts.
 
 Finally configure all tasks in cron:
 ```
