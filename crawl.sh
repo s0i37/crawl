@@ -325,9 +325,34 @@ do
 			tcpdump -r "$path" -nn -A | escape >> "$index"
 			echo $GREEN " [pcap]" $RESET
 			;;
-		application/x-raw-disk-image)
+		application/x-raw-disk-image|application/x-qemu-disk|application/x-virtualbox-vdi|application/x-virtualbox-vmdk)
 			echo -n "disk," >> "$index"
-			binwalk "$path" | escape >> "$index"
+			qemu-system-x86_64 -hda disk.img -m 256M -net nic -net user -display none -snapshot -hdb "$path"
+			nc -nv -lp 5555 << EE | escape >> $index
+for part in /dev/sdb*
+do echo $part
+  if mount $part /mnt/ -o ro; then
+    cd /mnt/
+    cat etc/shadow
+    cat root/.bash_history
+    cat home/*/.bash_history
+    cd -
+    umount /mnt
+  elif mount -t ntfs $part /mnt/ -o ro; then
+    cd /mnt/
+    find Users/*/Desktop
+    find Users/*/Documents
+    for history in Users/*/AppData/Local/Google/Chrome/User\ Data/Default/History
+    do echo 'select * from urls;' | sqlite3 "$history"
+    done
+    if [ -f Windows/System32/config/SAM ]; then
+      secretsdump.py -sam Windows/System32/config/SAM -security Windows/System32/config/SECURITY -system Windows/System32/config/SYSTEM LOCAL
+    fi
+    cd -
+    umount /mnt
+  fi
+done 2>/dev/null
+EE
 			echo $GREEN " [disk]" $RESET
 			;;
 		application/octet-stream)

