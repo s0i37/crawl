@@ -1,0 +1,9 @@
+!<arch>
+test.c/         0           0     0     644     57        `
+#include <stdio.h>
+
+void main()
+{
+	printf("s3cr3t\n");
+}
+
