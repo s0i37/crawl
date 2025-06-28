@@ -5,11 +5,11 @@ Supported file types: `text`, `xml`/`html`, `doc`/`docx`, `xls`/`xlsx`, `powerpo
 
 You can easily add your own file type in `crawl.sh` (GNU power)
 
-![cli](img/demo_cli.gif)
+![cli](demo/demo_cli.gif)
 
-![gui](img/demo_gui.gif)
+![gui](demo/demo_gui.gif)
 
-![gui](img/demo_gui2.gif)
+![gui](demo/demo_gui2.gif)
 
 ## Installation
 
@@ -197,7 +197,7 @@ Create index:
 `/opt/crawl/opensearch.py localhost:9200 -i company -init`
 
 Specify DOMAIN, USER, PASS, and DC in `cron/targets.sh`, `cron/smb.sh` and optionally `cron/www.sh`. Specify INDEX=company in `cron/import.sh`. Tune nmap scan speed in `cron/scan.sh`.
-For distributed crawling specify ROBOT and CLUSTER in `cron/www.sh`, `cron/ftp.sh`, `cron/smb.sh`, `cron/nfs.sh`, `cron/rsync.sh`. Also you can tune CRAWL_TIME, MAX_FILESIZE and MAX_DEPTH in these scripts.
+For distributed crawling specify ROBOT and CLUSTER in `cron/www.sh`, `cron/ftp.sh`, `cron/smb.sh`, `cron/nfs.sh`, `cron/rsync.sh` and DB in `cron/import.sh`. Also you can tune CRAWL_TIME, MAX_FILESIZE and MAX_DEPTH in these scripts.
 
 Finally configure all tasks in cron:
 ```
@@ -216,3 +216,12 @@ IMAGES=/opt/crawl/www/static/images
 30 01 * * * tmux new-session -d -s import -c '/opt/crawl/cron' 'timeout $[5*3600] ./import.sh'
 #30 06 * * 1 tmux new-session -d -s clean -c '/opt/crawl/cron' './reset.sh'
 ```
+
+### Crawling coverage (enterprise)
+
+SMB is the most important source of files. Therefore, to evaluate the progress of the crawling, I made a small set of scripts.
+The script `cron/smb_coverage/analyze.sh` obtains the all files in each share, compares it with respective session file of crawler and generates an html report for each network drive with *treemap* visualization.
+
+![gui](demo/demo_coverage.gif)
+
+Each folder is a rectangle, the larger the area of ​​the rectangle, the larger the size of the folder. The color of the folder indicates the degree of coverage by the crawler - light areas are studied folders, black folders - where the crawler has not yet reached.
