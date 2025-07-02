@@ -19,7 +19,7 @@ COPY cron cron
 COPY www www
 COPY spider.sh .
 COPY crawl.sh .
-COPY save_images.sh .
+COPY imap.sh .
 COPY import.sh .
 COPY search.sh .
 COPY opensearch.py .
