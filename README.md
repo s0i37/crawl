@@ -207,12 +207,12 @@ $ crontab -e
 IMAGES=/opt/crawl/www/static/images
 20 11 * * * tmux new-session -d -s targets -c '/opt/crawl/cron' 'timeout $[10*60] ./targets.sh'
 30 11 * * * tmux new-session -d -s scan -c '/opt/crawl/cron' 'timeout $[1*3600] ./scan.sh'
-30 12 * * * tmux new-session -d -s www -c '/opt/crawl/cron' 'timeout $[8*3600] ./www.sh'
-30 12 * * * tmux new-session -d -s ftp -c '/opt/crawl/cron' 'timeout $[8*3600] ./ftp.sh'
-30 12 * * * tmux new-session -d -s smb -c '/opt/crawl/cron' 'timeout $[8*3600] ./smb.sh'
-#30 12 * * * tmux new-window -t smb -c '/opt/crawl/cron' 'timeout $[8*3600] ./smb2.sh'
-30 12 * * * tmux new-session -d -s nfs -c '/opt/crawl/cron' 'timeout $[8*3600] ./nfs.sh'
-30 12 * * * tmux new-session -d -s rsync -c '/opt/crawl/cron' 'timeout $[8*3600] ./rsync.sh'
+30 12 * * * tmux new-session -d -s www -c '/opt/crawl/cron' -e "IMAGES=$IMAGES" 'timeout $[8*3600] ./www.sh'
+30 12 * * * tmux new-session -d -s ftp -c '/opt/crawl/cron' -e "IMAGES=$IMAGES" 'timeout $[8*3600] ./ftp.sh'
+30 12 * * * tmux new-session -d -s smb -c '/opt/crawl/cron' -e "IMAGES=$IMAGES" 'timeout $[8*3600] ./smb.sh'
+#30 12 * * * tmux new-window -t smb -c '/opt/crawl/cron' -e "IMAGES=$IMAGES" 'timeout $[8*3600] ./smb2.sh'
+30 12 * * * tmux new-session -d -s nfs -c '/opt/crawl/cron' -e "IMAGES=$IMAGES" 'timeout $[8*3600] ./nfs.sh'
+30 12 * * * tmux new-session -d -s rsync -c '/opt/crawl/cron' -e "IMAGES=$IMAGES" 'timeout $[8*3600] ./rsync.sh'
 30 01 * * * tmux new-session -d -s import -c '/opt/crawl/cron' 'timeout $[5*3600] ./import.sh'
 #30 06 * * 1 tmux new-session -d -s clean -c '/opt/crawl/cron' './reset.sh'
 ```
